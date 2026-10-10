@@ -10,6 +10,6 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 /docs/prototype/*.html
-packages/db/generated/
+packages/db/src/generated/
 playwright-report/
 test-results/

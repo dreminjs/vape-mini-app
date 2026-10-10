@@ -7,3 +7,4 @@ export * from './domain/cart.js';
 export * from './schemas/common.js';
 export * from './schemas/customer.js';
 export * from './schemas/admin.js';
+export * from './outbox.js';
