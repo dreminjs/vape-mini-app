@@ -21,7 +21,7 @@
   },
   "exports": {
     ".": {
-      "types": "./src/app.ts"
+      "types": "./dist/app.d.ts"
     }
   },
   "scripts": {

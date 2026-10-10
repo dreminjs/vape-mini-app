@@ -1,0 +1,18 @@
+export const s = {
+  searchPlaceholder: 'Поиск по каталогу...',
+  searchLabel: 'Поиск по каталогу',
+  all: 'Все',
+  categories: 'Категории',
+  sale: 'Уценка',
+  outOfStock: 'Нет в наличии',
+  choose: 'Выбрать вкусы',
+  variantForms: ['вариант', 'варианта', 'вариантов'] as const,
+  noResultsTitle: 'Ничего не найдено',
+  noResultsText: 'Попробуйте изменить запрос',
+  resetSearch: 'Сбросить поиск',
+  emptyCategoryTitle: 'В этой категории пока пусто',
+  emptyCategoryText: 'Загляните позже или выберите другую категорию',
+  showAll: 'Показать все товары',
+  loadError: 'Не удалось загрузить каталог',
+  loadingMore: 'Загружаем ещё...',
+};

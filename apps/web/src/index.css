@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/* Brand tokens from the prototype. Use these names, never raw hex in components. */
+@theme {
+  --color-vape-dark: #0f172a;
+  --color-vape-card: #1e293b;
+  --color-vape-accent: #8b5cf6;
+  --color-vape-glow: #a855f7;
+  --color-vape-green: #10b981;
+  --color-vape-red: #ef4444;
+  --color-vape-amber: #f59e0b;
+  --color-vape-blue: #3b82f6;
+  --color-vape-border: #334155;
+  --color-vape-muted: #94a3b8;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 15px rgb(139 92 246 / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 25px rgb(168 85 247 / 0.8);
+    }
+  }
+}
+
+:root {
+  color-scheme: dark;
+  /* Telegram viewport + safe areas. The SDK binds --tg-viewport-* when available. */
+  --app-height: var(--tg-viewport-stable-height, 100dvh);
+  --safe-top: max(env(safe-area-inset-top), var(--tg-viewport-content-safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-viewport-safe-area-inset-bottom, 0px));
+  --tabbar-height: 64px;
+}
+
+html,
+body {
+  background: var(--color-vape-dark);
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* No text selection on app chrome; content (order numbers, promo codes) stays selectable. */
+.ui-chrome {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-vape-glow);
+  outline-offset: 2px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
