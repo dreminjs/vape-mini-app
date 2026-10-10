@@ -1,0 +1,30 @@
+{
+  "name": "@vapehard/bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@vapehard/config": "workspace:*",
+    "pino-pretty": "13.2.0"
+  },
+  "dependencies": {
+    "@grammyjs/auto-retry": "2.0.2",
+    "@grammyjs/runner": "2.0.3",
+    "@grammyjs/transformer-throttler": "1.2.1",
+    "@hono/node-server": "2.1.4",
+    "@vapehard/db": "workspace:*",
+    "@vapehard/shared": "workspace:*",
+    "grammy": "1.46.0",
+    "hono": "4.13.13",
+    "pino": "10.4.0",
+    "zod": "4.6.5"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test --max-warnings 0",
+    "test": "vitest run"
+  }
+}

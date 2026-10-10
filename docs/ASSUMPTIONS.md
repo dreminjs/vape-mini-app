@@ -19,3 +19,7 @@ Decisions made where the build prompt is not explicit.
 15. **Integration tests** use the dev compose Postgres with a separate database `vape_test`.
 16. **"Скидка" vs gift**: one reward per order.
 17. **Images**: public read for `products/*` through `/media/<bucket>/products/...`. The web builds image URLs from `imageKey` + `/media/<bucket>/`.
+18. **Bot plugins**: the throttler package is `@grammyjs/transformer-throttler` (the prompt's `@grammyjs/throttler` does not exist). `@grammyjs/hydrate` is not used: the bot never edits sent messages, and its context types break `webhookCallback`/`run` under `exactOptionalPropertyTypes`.
+19. **Prize amounts**: FIXED prizes store kopecks (`500` = 5 BYN), PERCENT prizes store whole percent.
+20. **Cancelled orders and rewards**: when a cancel frees a reward, the order's `rewardId` link is cleared (the unique link lets the reward be used once again); the order keeps its discount numbers.
+21. **Deleted variants**: `OrderItem.variantId` becomes NULL (snapshot stays); their ledger rows are deleted with them.
