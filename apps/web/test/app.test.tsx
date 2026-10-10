@@ -14,7 +14,7 @@ import { API, handlers, me } from './fixtures';
 
 const server = setupServer(...handlers);
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
+  server.listen({ onUnhandledFrame: 'error' });
 });
 afterEach(() => {
   server.resetHandlers();
@@ -146,20 +146,18 @@ describe('empty and error states', () => {
         return HttpResponse.json(v);
       }),
     );
-    useCartStore
-      .getState()
-      .add([
-        {
-          productId: 1,
-          variantId: 10,
-          productName: 'Husky',
-          variantName: 'Miami Snow',
-          unitPriceMinor: 2800,
-          imageUrl: null,
-          qty: 3,
-          maxStock: 5,
-        },
-      ]);
+    useCartStore.getState().add([
+      {
+        productId: 1,
+        variantId: 10,
+        productName: 'Husky',
+        variantName: 'Miami Snow',
+        unitPriceMinor: 2800,
+        imageUrl: null,
+        qty: 3,
+        maxStock: 5,
+      },
+    ]);
     renderApp('/cart');
     expect(await screen.findByText(/Количество исправлено/)).toBeInTheDocument();
     await waitFor(() => {

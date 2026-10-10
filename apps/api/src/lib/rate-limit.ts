@@ -17,8 +17,15 @@ export function rateLimit(opts: {
   max: number;
   name: string;
 }): MiddlewareHandler<AppEnv> {
-  const buckets = new Map<string, Bucket>();
+  // State belongs to one app instance (keyed by its deps), not to the module.
+  const perApp = new WeakMap<object, Map<string, Bucket>>();
   return async (c, next) => {
+    const deps = c.get('deps');
+    let buckets = perApp.get(deps);
+    if (!buckets) {
+      buckets = new Map();
+      perApp.set(deps, buckets);
+    }
     const now = Date.now();
     const user = c.get('user') as AppEnv['Variables']['user'] | undefined;
     const key = user
