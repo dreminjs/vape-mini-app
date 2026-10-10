@@ -51,11 +51,14 @@ async function start(): Promise<void> {
   await bot.init();
   await configureBot(bot, env.WEB_APP_URL);
 
+  // Health endpoint in both modes (Docker healthcheck); the webhook route only in webhook mode.
+  const app = new Hono().get('/healthz', (c) => c.json({ ok: true }));
   if (env.BOT_MODE === 'webhook' && env.WEBHOOK_URL && env.WEBHOOK_SECRET) {
-    const app = new Hono()
-      .get('/healthz', (c) => c.json({ ok: true }))
-      // grammY checks X-Telegram-Bot-Api-Secret-Token with the secret.
-      .post('/telegram/webhook', webhookCallback(bot, 'hono', { secretToken: env.WEBHOOK_SECRET }));
+    // grammY checks X-Telegram-Bot-Api-Secret-Token against the secret.
+    app.post(
+      '/telegram/webhook',
+      webhookCallback(bot, 'hono', { secretToken: env.WEBHOOK_SECRET }),
+    );
     server = serve({ fetch: app.fetch, port: env.BOT_PORT });
     await bot.api.setWebhook(env.WEBHOOK_URL, {
       secret_token: env.WEBHOOK_SECRET,
@@ -63,6 +66,7 @@ async function start(): Promise<void> {
     });
     log.info({ port: env.BOT_PORT }, 'bot started in webhook mode');
   } else {
+    server = serve({ fetch: app.fetch, port: env.BOT_PORT });
     await bot.api.deleteWebhook();
     runner = run(bot);
     log.info('bot started in polling mode');

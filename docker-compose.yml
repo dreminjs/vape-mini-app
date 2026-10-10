@@ -1,0 +1,157 @@
+# Full stack (production-like). Usage: cp .env.example .env, fill it, then `docker compose up --build -d`.
+# Only `edge` publishes ports. Everything else lives on the internal network.
+name: vapehard
+
+x-app-env: &app-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  BOT_TOKEN: ${BOT_TOKEN}
+  ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS}
+  MANAGER_USERNAME: ${MANAGER_USERNAME}
+
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Chainguard build of MinIO (official images were removed from Docker Hub). No shell inside,
+  # so there is no container healthcheck; the API /readyz checks storage.
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:7df55d002b698e4494a131b848dd553361bbe58b7e19f62d9623c29af1ba9ccf
+    restart: unless-stopped
+    command: ['server', '/data']
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - minio-data:/data
+    networks: [internal]
+
+  minio-bucket:
+    image: cgr.dev/chainguard/minio-client@sha256:d1b0ec88e3ac5233e2862594c06399095337fa816c0960f78081ba4965bdc0c5
+    depends_on: [minio]
+    environment:
+      MC_HOST_local: http://${S3_ACCESS_KEY}:${S3_SECRET_KEY}@minio:9000
+    command: ['mb', '--ignore-existing', 'local/${S3_BUCKET}']
+    restart: on-failure
+    networks: [internal]
+
+  # Public read only for products/* (product images). Everything else stays private.
+  minio-init:
+    image: cgr.dev/chainguard/minio-client@sha256:d1b0ec88e3ac5233e2862594c06399095337fa816c0960f78081ba4965bdc0c5
+    depends_on:
+      minio-bucket:
+        condition: service_completed_successfully
+    environment:
+      MC_HOST_local: http://${S3_ACCESS_KEY}:${S3_SECRET_KEY}@minio:9000
+    command: ['anonymous', 'set', 'download', 'local/${S3_BUCKET}/products']
+    restart: on-failure
+    networks: [internal]
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: migrate
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      SEED: ${SEED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      API_PORT: 3000
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_SESSION_HOURS: ${ADMIN_SESSION_HOURS:-12}
+      INIT_DATA_MAX_AGE_SECONDS: ${INIT_DATA_MAX_AGE_SECONDS:-3600}
+      REWARD_TTL_DAYS: ${REWARD_TTL_DAYS:-7}
+      S3_ENDPOINT: http://minio:9000
+      # Browser uploads go through Caddy: https://<DOMAIN>/media → minio.
+      S3_PUBLIC_ENDPOINT: https://${DOMAIN}/media
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      MEDIA_BASE_URL: /media/${S3_BUCKET}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    networks: [internal]
+    deploy:
+      resources:
+        limits: { memory: 512m }
+
+  bot:
+    build:
+      context: .
+      dockerfile: docker/bot.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      BOT_MODE: ${BOT_MODE:-webhook}
+      BOT_PORT: 3001
+      WEBHOOK_URL: https://${DOMAIN}/telegram/webhook
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      WEB_APP_URL: ${WEB_APP_URL}
+      MANAGER_CHAT_ID: ${MANAGER_CHAT_ID}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [internal]
+    deploy:
+      resources:
+        limits: { memory: 256m }
+
+  edge:
+    build:
+      context: .
+      dockerfile: docker/edge.Dockerfile
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  pg-data:
+  minio-data:
+  caddy-data:
+  caddy-config:

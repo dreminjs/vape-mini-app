@@ -75,10 +75,65 @@ describe('customer flow', () => {
     expect(useCartStore.getState().lines).toEqual([]);
   });
 
-  it('redirects to the 18+ gate when age is not confirmed', async () => {
-    server.use(http.get(`${API}/me`, () => HttpResponse.json({ ...me, ageConfirmed: false })));
+  it('shows the catalog without an 18+ screen; checkout needs the 18+ checkbox', async () => {
+    const user = userEvent.setup();
+    let confirmed = false;
+    server.use(
+      http.get(`${API}/me`, () => HttpResponse.json({ ...me, ageConfirmed: confirmed })),
+      http.post(`${API}/me/confirm-age`, () => {
+        confirmed = true;
+        return HttpResponse.json({ ...me, ageConfirmed: true });
+      }),
+    );
+    useCartStore.getState().add([
+      {
+        productId: 1,
+        variantId: 10,
+        productName: 'Husky',
+        variantName: 'Miami Snow',
+        unitPriceMinor: 2800,
+        imageUrl: null,
+        qty: 1,
+        maxStock: 5,
+      },
+    ]);
     renderApp('/');
-    expect(await screen.findByRole('button', { name: 'Мне есть 18 лет' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /Husky Premium 30ml/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: /Корзина/ }));
+    const checkout = await screen.findByRole('button', { name: /Оформить и написать менеджеру/ });
+    expect(checkout).toBeDisabled();
+    await user.click(screen.getByLabelText('Мне есть 18 лет'));
+    await user.click(checkout);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(confirmed).toBe(true);
+  });
+
+  it('logs in to the admin panel with a password', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post(`${API}/me/admin-login`, async ({ request }) => {
+        const { password } = (await request.json()) as { password: string };
+        return password === 'secret-pass-1'
+          ? HttpResponse.json({ ...me, isAdmin: true })
+          : HttpResponse.json(
+              { error: { code: 'FORBIDDEN', message: 'Неверный пароль' } },
+              { status: 403 },
+            );
+      }),
+    );
+    renderApp('/profile');
+    const input = await screen.findByLabelText('Пароль администратора');
+    await user.type(input, 'wrong');
+    await user.click(screen.getByRole('button', { name: 'Войти' }));
+    expect(await screen.findByText('Неверный пароль')).toBeInTheDocument();
+
+    await user.type(input, 'secret-pass-1');
+    await user.click(screen.getByRole('button', { name: 'Войти' }));
+    expect(
+      await screen.findByRole('link', { name: 'Открыть панель управления' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Админка/ })).toBeInTheDocument();
   });
 
   it('hides the admin tab for customers', async () => {

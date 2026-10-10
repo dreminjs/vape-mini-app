@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "@vapehard/config": "workspace:*"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

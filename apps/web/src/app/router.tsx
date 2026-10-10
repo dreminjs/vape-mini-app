@@ -4,7 +4,7 @@ import { meQuery } from '../features/session/api';
 import { prefetch } from '../shared/lib/query-client';
 import { ProductGridSkeleton } from '../shared/ui/skeleton';
 
-import { AgeGuard, AppLayout } from './layout';
+import { AppLayout } from './layout';
 import { RouteError } from './route-error';
 
 /** Routes are lazy. The /admin tree lives in its own chunks, so customers never load admin code. */
@@ -23,13 +23,8 @@ export const routes: RouteObject[] = [
       return null;
     },
     children: [
+      // The catalog opens right away; the 18+ confirmation is part of checkout.
       {
-        path: 'age-gate',
-        lazy: () => import('../features/session/age-gate-page'),
-        ErrorBoundary: RouteError,
-      },
-      {
-        Component: AgeGuard,
         ErrorBoundary: RouteError,
         children: [
           {

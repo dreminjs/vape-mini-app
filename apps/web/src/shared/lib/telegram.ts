@@ -66,7 +66,9 @@ export async function initTelegram(): Promise<void> {
     if (disableVerticalSwipes.isAvailable()) disableVerticalSwipes();
   }
   if (mountViewport.isAvailable()) {
-    await mountViewport();
+    // Without a real Telegram client (dev mock) nobody answers the viewport request,
+    // so do not let it block the first render.
+    await Promise.race([mountViewport(), new Promise((r) => setTimeout(r, 1000))]);
     if (bindViewportCssVars.isAvailable()) bindViewportCssVars();
     if (expandViewport.isAvailable()) expandViewport();
   }

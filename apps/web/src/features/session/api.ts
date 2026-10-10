@@ -30,3 +30,27 @@ export function useConfirmAge() {
     },
   });
 }
+
+export function useAdminLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (password: string) =>
+      unwrap(client.me['admin-login'].$post({ json: { password } })),
+    // The page shows the error inline (wrong password / too many attempts).
+    onError: () => undefined,
+    onSuccess: (me) => {
+      qc.setQueryData(sessionKeys.me, me);
+    },
+  });
+}
+
+export function useAdminLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(client.me['admin-logout'].$post()),
+    onSuccess: (me) => {
+      qc.setQueryData(sessionKeys.me, me);
+      qc.removeQueries({ queryKey: ['admin'] });
+    },
+  });
+}

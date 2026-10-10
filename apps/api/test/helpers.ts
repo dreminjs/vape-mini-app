@@ -10,6 +10,7 @@ import { signInitData } from '../src/lib/init-data.js';
 
 export const BOT_TOKEN = '123456:TEST_TOKEN';
 export const ADMIN_TG_ID = 9000;
+export const ADMIN_PASSWORD = 'correct-horse-battery';
 
 const rootEnv = resolve(import.meta.dirname, '../../../.env');
 if (!process.env.TEST_DATABASE_URL && existsSync(rootEnv)) process.loadEnvFile(rootEnv);
@@ -61,6 +62,8 @@ export function makeContext(overrides: Partial<Deps> = {}): TestContext {
     config: {
       botToken: BOT_TOKEN,
       adminTelegramIds: new Set([BigInt(ADMIN_TG_ID)]),
+      adminPassword: ADMIN_PASSWORD,
+      adminSessionHours: 12,
       managerUsername: 'VapeHard_manager',
       initDataMaxAgeSeconds: 3600,
       rewardTtlDays: 7,

@@ -9,6 +9,7 @@ import {
   type PublicConfigDto,
 } from '@vapehard/shared';
 import { Hono } from 'hono';
+import { z } from 'zod';
 
 import type { AppEnv } from '../deps.js';
 import { AppError } from '../errors.js';
@@ -19,16 +20,30 @@ import { validateCart } from '../services/cart.js';
 import { getProduct, listCategories, listProducts } from '../services/catalog.js';
 import { createOrder, getOwnOrder, listOwnOrders } from '../services/orders.js';
 import { getRouletteState, spin } from '../services/roulette.js';
-import { confirmAge, toMeDto } from '../services/users.js';
+import { adminLogin, adminLogout, confirmAge, toMeDto } from '../services/users.js';
 
 const MINUTE = 60_000;
 
 /** Routes that only need a valid Telegram user (age gate itself, profile, config). */
 export const meRoutes = new Hono<AppEnv>()
-  .get('/me', (c) => c.json(toMeDto(c.get('user'))))
+  .get('/me', (c) => c.json(toMeDto(c.get('user'), c.get('deps').clock())))
   .post('/me/confirm-age', async (c) => {
     const user = await confirmAge(c.get('deps'), c.get('user'));
-    return c.json(toMeDto(user));
+    return c.json(toMeDto(user, c.get('deps').clock()));
+  })
+  // Strict limit: 5 password attempts per 15 minutes per user.
+  .post(
+    '/me/admin-login',
+    rateLimit({ name: 'admin-login', windowMs: 15 * MINUTE, max: 5 }),
+    validate('json', z.object({ password: z.string().min(1).max(200) })),
+    async (c) => {
+      const user = await adminLogin(c.get('deps'), c.get('user'), c.req.valid('json').password);
+      return c.json(toMeDto(user, c.get('deps').clock()));
+    },
+  )
+  .post('/me/admin-logout', async (c) => {
+    const user = await adminLogout(c.get('deps'), c.get('user'));
+    return c.json(toMeDto(user, c.get('deps').clock()));
   })
   .get('/config/public', (c) => {
     const { config } = c.get('deps');
@@ -40,9 +55,8 @@ export const meRoutes = new Hono<AppEnv>()
     return c.json(body);
   });
 
-/** Shop routes: require the 18+ confirmation. */
+/** Shop routes. Browsing is open; placing an order needs the 18+ confirmation. */
 export const shopRoutes = new Hono<AppEnv>()
-  .use(requireAge)
   .get('/categories', async (c) => c.json(await listCategories(c.get('deps'))))
   .get('/products', validate('query', productListQuerySchema), async (c) =>
     c.json(await listProducts(c.get('deps'), c.req.valid('query'))),
@@ -56,6 +70,7 @@ export const shopRoutes = new Hono<AppEnv>()
   .post(
     '/orders',
     rateLimit({ name: 'orders', windowMs: MINUTE, max: 10 }),
+    requireAge,
     validate('json', createOrderSchema),
     async (c) => {
       const key = idempotencyKeySchema.safeParse(c.req.header('idempotency-key'));

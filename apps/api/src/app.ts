@@ -25,8 +25,8 @@ export function createApp(deps: Deps) {
     .use(rateLimit({ name: 'global', windowMs: 60_000, max: 300 }))
     .use(requireAuth)
     .route('/', meRoutes)
-    .route('/', shopRoutes)
-    .route('/admin', adminRoutes);
+    .route('/admin', adminRoutes)
+    .route('/', shopRoutes);
 
   const app = new Hono<AppEnv>()
     .use(requestId())

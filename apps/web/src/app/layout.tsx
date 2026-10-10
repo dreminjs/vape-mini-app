@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Suspense, useEffect } from 'react';
-import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { selectCount, useCartStore } from '../features/cart/store';
 import { meQuery } from '../features/session/api';
@@ -162,10 +162,4 @@ export function AppLayout() {
       <TabBar isAdmin={me.isAdmin} />
     </div>
   );
-}
-
-/** Redirects to the 18+ gate until the server says the age is confirmed. */
-export function AgeGuard() {
-  const { data: me } = useSuspenseQuery(meQuery());
-  return me.ageConfirmed ? <Outlet /> : <Navigate to="/age-gate" replace />;
 }

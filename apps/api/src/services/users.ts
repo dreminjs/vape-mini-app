@@ -1,6 +1,9 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
+
 import type { MeDto } from '@vapehard/shared';
 
 import type { AuthUser, Deps } from '../deps.js';
+import { forbidden } from '../errors.js';
 import type { TelegramUser } from '../lib/init-data.js';
 
 /**
@@ -28,7 +31,33 @@ export async function confirmAge(deps: Deps, user: AuthUser): Promise<AuthUser> 
   return deps.db.user.update({ where: { id: user.id }, data: { ageConfirmedAt: deps.clock() } });
 }
 
-export function toMeDto(user: AuthUser): MeDto {
+/** Admin = permanent role (ADMIN_TELEGRAM_IDS) or a password session that has not expired. */
+export function isAdmin(user: AuthUser, now: Date): boolean {
+  return user.role === 'ADMIN' || (user.adminUntil !== null && user.adminUntil > now);
+}
+
+/** Hashing both sides gives equal lengths, so the comparison is constant-time. */
+function passwordMatches(given: string, expected: string): boolean {
+  const a = createHash('sha256').update(given).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
+export async function adminLogin(deps: Deps, user: AuthUser, password: string): Promise<AuthUser> {
+  if (!passwordMatches(password, deps.config.adminPassword)) {
+    deps.log.warn({ userId: user.id }, 'admin login failed');
+    throw forbidden('Неверный пароль');
+  }
+  const until = new Date(deps.clock().getTime() + deps.config.adminSessionHours * 3600_000);
+  deps.log.info({ userId: user.id }, 'admin login');
+  return deps.db.user.update({ where: { id: user.id }, data: { adminUntil: until } });
+}
+
+export async function adminLogout(deps: Deps, user: AuthUser): Promise<AuthUser> {
+  return deps.db.user.update({ where: { id: user.id }, data: { adminUntil: null } });
+}
+
+export function toMeDto(user: AuthUser, now: Date): MeDto {
   return {
     id: user.id,
     telegramId: user.telegramId.toString(),
@@ -36,7 +65,7 @@ export function toMeDto(user: AuthUser): MeDto {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
-    isAdmin: user.role === 'ADMIN',
+    isAdmin: isAdmin(user, now),
     ageConfirmed: user.ageConfirmedAt !== null,
   };
 }

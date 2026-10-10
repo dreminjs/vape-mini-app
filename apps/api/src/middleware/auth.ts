@@ -3,7 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import type { AppEnv } from '../deps.js';
 import { AppError, forbidden, unauthorized } from '../errors.js';
 import { validateInitData } from '../lib/init-data.js';
-import { upsertTelegramUser } from '../services/users.js';
+import { isAdmin, upsertTelegramUser } from '../services/users.js';
 
 /** Header format: `Authorization: tma <initDataRaw>`. */
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
@@ -30,7 +30,7 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 export const requireAdmin = createMiddleware<AppEnv>(async (c, next) => {
-  if (c.get('user').role !== 'ADMIN') throw forbidden();
+  if (!isAdmin(c.get('user'), c.get('deps').clock())) throw forbidden();
   await next();
 });
 

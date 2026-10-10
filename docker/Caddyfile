@@ -1,0 +1,45 @@
+# Edge: automatic HTTPS for {$DOMAIN}, static Mini App, reverse proxy to internal services.
+{
+	email {$ACME_EMAIL:admin@example.com}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Telegram Web embeds Mini Apps in an iframe, so frame-ancestors allows telegram.org.
+		# 'unsafe-inline' for styles only: the roulette wheel uses inline style attributes.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle /telegram/webhook {
+		reverse_proxy bot:3001
+	}
+
+	# Browser uploads (presigned POST) and public product images. /media is stripped.
+	handle_path /media/* {
+		request_body {
+			max_size 6MB
+		}
+		reverse_proxy minio:9000
+	}
+
+	handle {
+		root * /srv
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@html path / /index.html
+		header @html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

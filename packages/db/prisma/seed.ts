@@ -1,5 +1,6 @@
 // Idempotent seed: safe to run many times. Existing products (matched by name) are not changed.
-import { createPrismaClient } from '../src/index.js';
+// Imports the built package (self-reference), so it also works in the Docker image without src/.
+import { createPrismaClient } from '@vapehard/db';
 
 import { CATEGORIES, PRIZES, PRODUCTS } from './seed-data.js';
 

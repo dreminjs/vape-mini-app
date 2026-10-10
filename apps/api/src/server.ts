@@ -28,6 +28,8 @@ const app = createApp({
   config: {
     botToken: env.BOT_TOKEN,
     adminTelegramIds: env.ADMIN_TELEGRAM_IDS,
+    adminPassword: env.ADMIN_PASSWORD,
+    adminSessionHours: env.ADMIN_SESSION_HOURS,
     managerUsername: env.MANAGER_USERNAME,
     initDataMaxAgeSeconds: env.INIT_DATA_MAX_AGE_SECONDS,
     rewardTtlDays: env.REWARD_TTL_DAYS,

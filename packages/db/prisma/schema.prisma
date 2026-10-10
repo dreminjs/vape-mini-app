@@ -55,6 +55,8 @@ model User {
   firstName      String
   lastName       String?
   role           Role      @default(CUSTOMER)
+  /// Admin access granted by password lasts until this moment (see ADR 0002).
+  adminUntil     DateTime?
   ageConfirmedAt DateTime?
   createdAt      DateTime  @default(now())
   lastSeenAt     DateTime  @default(now())

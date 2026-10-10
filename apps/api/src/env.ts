@@ -19,6 +19,9 @@ export const envSchema = z.object({
   DATABASE_URL: z.url(),
   BOT_TOKEN: z.string().regex(/^\d+:[\w-]+$/, 'looks invalid'),
   ADMIN_TELEGRAM_IDS: idList,
+  /** Password for the admin panel. Anyone who knows it gets admin access for ADMIN_SESSION_HOURS. */
+  ADMIN_PASSWORD: z.string().min(10, 'must be at least 10 characters'),
+  ADMIN_SESSION_HOURS: z.coerce.number().int().positive().default(12),
   MANAGER_USERNAME: z.string().regex(/^[A-Za-z0-9_]{5,32}$/),
   INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(3600),
   REWARD_TTL_DAYS: z.coerce.number().int().positive().default(7),

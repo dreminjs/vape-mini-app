@@ -17,7 +17,7 @@ import { Money, PriceSummary } from '../../shared/ui/money';
 import { ProductImage } from '../../shared/ui/product-image';
 import { EmptyState } from '../../shared/ui/states';
 import { Stepper } from '../../shared/ui/stepper';
-import { meQuery, publicConfigQuery } from '../session/api';
+import { meQuery, publicConfigQuery, useConfirmAge } from '../session/api';
 
 import { cartValidateQuery, useCreateOrder } from './api';
 import { OrderSuccessDialog } from './order-success-dialog';
@@ -49,6 +49,7 @@ const s = {
   promoActive: (code: string) => `Промокод ${code} активен`,
   checkout: 'Оформить и написать менеджеру',
   offline: 'Нет соединения — оформление недоступно',
+  adult: 'Мне есть 18 лет',
   priceChanged: 'Цены на некоторые товары изменились. Проверьте сумму.',
   stockReduced: 'Некоторых товаров меньше, чем вы выбрали. Количество исправлено.',
   removed: 'Некоторые товары закончились и удалены из корзины.',
@@ -118,6 +119,8 @@ export function Component() {
   const { data: me } = useSuspenseQuery(meQuery());
   const online = useOnline();
   const createOrder = useCreateOrder();
+  const confirmAge = useConfirmAge();
+  const [adult, setAdult] = useState(false);
 
   const [promoInput, setPromoInput] = useState(rewardCode ?? '');
   const [successOrder, setSuccessOrder] = useState<OrderDto | null>(null);
@@ -152,6 +155,8 @@ export function Component() {
 
   const submit = async (contactUsername?: string) => {
     try {
+      // The 18+ confirmation is stored on the server once, right before the first order.
+      if (!me.ageConfirmed) await confirmAge.mutateAsync();
       const order = await createOrder.mutateAsync({
         input: {
           items: lines.map((l) => ({ variantId: l.variantId, qty: l.qty })),
@@ -325,12 +330,26 @@ export function Component() {
         />
       )}
 
+      {!me.ageConfirmed && (
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-800 bg-vape-card px-3 text-sm text-slate-200">
+          <input
+            type="checkbox"
+            checked={adult}
+            onChange={(e) => {
+              setAdult(e.target.checked);
+            }}
+            className="size-5 accent-vape-accent"
+          />
+          {s.adult}
+        </label>
+      )}
+
       {!online && <p className="text-center text-sm text-amber-300">{s.offline}</p>}
       <Button
         block
         className="min-h-12 text-base"
-        pending={createOrder.isPending}
-        disabled={!online || lines.length === 0}
+        pending={createOrder.isPending || confirmAge.isPending}
+        disabled={!online || lines.length === 0 || (!me.ageConfirmed && !adult)}
         icon={<Send className="size-4" aria-hidden />}
         onClick={onCheckout}
       >

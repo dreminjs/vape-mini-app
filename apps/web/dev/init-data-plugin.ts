@@ -28,6 +28,8 @@ export function devInitDataPlugin(botToken: string | undefined, userId: number):
             username: 'dev_user',
             language_code: 'ru',
           }),
+          // The SDK schema requires this field (Ed25519 third-party signature). The API ignores its value.
+          signature: 'dev-signature',
         });
         const dataCheckString = [...params.entries()]
           .sort(([a], [b]) => (a < b ? -1 : 1))

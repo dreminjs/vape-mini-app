@@ -18,6 +18,8 @@ export interface Storage {
 export interface AppConfig {
   botToken: string;
   adminTelegramIds: ReadonlySet<bigint>;
+  adminPassword: string;
+  adminSessionHours: number;
   managerUsername: string;
   initDataMaxAgeSeconds: number;
   rewardTtlDays: number;

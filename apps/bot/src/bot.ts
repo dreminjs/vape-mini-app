@@ -51,9 +51,12 @@ export const handlers = {
     if (!ctx.from) return;
     const user = await deps.db.user.findUnique({
       where: { telegramId: BigInt(ctx.from.id) },
-      select: { role: true },
+      select: { role: true, adminUntil: true },
     });
-    if (user?.role !== 'ADMIN') {
+    // Same rule as the API: permanent admin role or an active password session.
+    const admin =
+      user?.role === 'ADMIN' || (user?.adminUntil != null && user.adminUntil > deps.clock());
+    if (!admin) {
       await ctx.reply(t.notAdmin);
       return;
     }
