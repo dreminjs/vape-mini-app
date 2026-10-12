@@ -32,7 +32,7 @@ export function createApp(deps: Deps) {
     .use(requestId())
     .use(
           cors({
-            origin: 'http://localhost:3000',
+            origin: '*',
             credentials: true
           })
         )
