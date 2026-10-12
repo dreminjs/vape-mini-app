@@ -69,7 +69,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: docker/api.Dockerfile
+      dockerfile: Dockerfile
       target: runtime
     restart: unless-stopped
     environment:
