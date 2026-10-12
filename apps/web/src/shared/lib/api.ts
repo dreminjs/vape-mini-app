@@ -20,7 +20,7 @@ export class ApiError extends Error {
 }
 
 /** Typed client: paths and bodies are checked against the API at compile time. */
-export const client = hc<AppType>(`http:/localhost:3000/`, {
+export const client = hc<AppType>(`https://vape-mini-app.onrender.com`, {
   headers: (): Record<string, string> => {
     const raw = getRawInitData();
     return raw ? { authorization: `tma ${raw}` } : {};
