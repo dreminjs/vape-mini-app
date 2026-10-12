@@ -1,14 +1,6 @@
 
 name: vapehard
 
-x-app-env: &app-env
-  NODE_ENV: production
-  LOG_LEVEL: ${LOG_LEVEL:-info}
-  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-  BOT_TOKEN: ${BOT_TOKEN}
-  ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS}
-  MANAGER_USERNAME: ${MANAGER_USERNAME}
-
 services:
   postgres:
     image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
