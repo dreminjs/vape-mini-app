@@ -55,7 +55,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: docker/api.Dockerfile
+      dockerfile: Dockerfile
       target: migrate
     environment:
       NODE_ENV: production
@@ -100,7 +100,7 @@ services:
   bot:
     build:
       context: .
-      dockerfile: docker/bot.Dockerfile
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       <<: *app-env
@@ -121,7 +121,7 @@ services:
   edge:
     build:
       context: .
-      dockerfile: docker/edge.Dockerfile
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN}
