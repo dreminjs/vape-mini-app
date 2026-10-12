@@ -1,5 +1,4 @@
-# Full stack (production-like). Usage: cp .env.example .env, fill it, then `docker compose up --build -d`.
-# Only `edge` publishes ports. Everything else lives on the internal network.
+
 name: vapehard
 
 x-app-env: &app-env
