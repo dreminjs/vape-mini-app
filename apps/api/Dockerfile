@@ -1,29 +1,47 @@
+# ==========================================
+# 1. СТАДИЯ СБОРКИ (Builder)
+# ==========================================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Устанавливаем pnpm (если вы используете npm или yarn, удалите эту строку и используйте их команды)
+# Включаем pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Копируем глобальные конфиги воркспейсов
+# Копируем конфиги монорепозитория
 COPY package.json pnpm-workspace.yaml* pnpm-lock.yaml* ./
 
-# Копируем исходники всех пакетов
+# Копируем исходный код приложений и общих пакетов.
+# ВНИМАНИЕ: Если ваши общие пакеты лежат в папке `libs` вместо `packages`,
+# измените слово `packages` на `libs` в строке ниже.
 COPY apps ./apps
+COPY packages ./packages
 
-# Устанавливаем зависимости для всего монорепозитория
+# Устанавливаем все зависимости монорепозитория
 RUN pnpm install --frozen-lockfile
 
-# Собираем конкретное приложение
-RUN pnpm --filter api build
+# Если вы используете Prisma внутри @vapehard/db, вам нужно сгенерировать клиент.
+# Раскомментируйте и при необходимости поправьте команду под ваши скрипты:
+# RUN pnpm --filter "@vapehard/db" run generate
 
+# Собираем API и ВСЕ его зависимости (@vapehard/shared, db, config и т.д.)
+# Троеточие (...) после api указывает pnpm собрать все пакеты, от которых зависит API.
+RUN pnpm --filter api... run build
+
+# Изолируем только production-зависимости API в отдельную папку
+RUN pnpm deploy --filter api --prod /prod/api
+
+
+# ==========================================
+# 2. СТАДИЯ ВЫПОЛНЕНИЯ (Runtime)
+# ==========================================
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
-# Копируем собранное приложение и нужные модули из builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/
+# Устанавливаем production окружение
+ENV NODE_ENV=production
 
-WORKDIR /app/apps/api
+# Копируем ТОЛЬКО готовое приложение и его прод-зависимости из builder'а
+COPY --from=builder /prod/api ./
+
+# Запускаем собранное API (убедитесь, что в apps/api/package.json есть скрипт start:prod)
 CMD ["npm", "run", "start:prod"]
