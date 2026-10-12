@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { requestId } from 'hono/request-id';
 import { secureHeaders } from 'hono/secure-headers';
-
+import { cors } from 'hono/cors';
 import type { AppEnv, Deps } from './deps.js';
 import { AppError } from './errors.js';
 import { rateLimit } from './lib/rate-limit.js';
@@ -30,6 +30,12 @@ export function createApp(deps: Deps) {
 
   const app = new Hono<AppEnv>()
     .use(requestId())
+    .use(
+          cors({
+            origin: 'http://localhost:3000',
+            credentials: true
+          })
+        )
     .use(async (c, next) => {
       c.set('deps', deps);
       const start = performance.now();

@@ -37,7 +37,7 @@ const app = createApp({
   },
 });
 
-const server = serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {
+const server = serve({ fetch: app.fetch, port: env.API_PORT,  }, (info) => {
   log.info({ port: info.port }, 'API listening');
 });
 
