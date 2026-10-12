@@ -30,7 +30,7 @@ services:
   # Chainguard build of MinIO (official images were removed from Docker Hub). No shell inside,
   # so there is no container healthcheck; the API /readyz checks storage.
   minio:
-    image: cgr.dev/chainguard/minio@sha256:7df55d002b698e4494a131b848dd553361bbe58b7e19f62d9623c29af1ba9ccf
+    image: minio/minio:latest
     restart: unless-stopped
     command: ['server', '/data']
     environment:
