@@ -44,4 +44,4 @@ ENV NODE_ENV=production
 COPY --from=builder /prod/api ./
 
 # Запускаем собранное API (убедитесь, что в apps/api/package.json есть скрипт start:prod)
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]
