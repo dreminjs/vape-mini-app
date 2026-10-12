@@ -76,6 +76,9 @@ export function createApp(deps: Deps) {
 
   // One error format for everything. Internal details never leave the server.
   app.onError((error, c) => {
+
+    console.log(error,c)
+
     if (error instanceof AppError) {
       return c.json(errorBody(error.code, error.message, error.details), error.status);
     }

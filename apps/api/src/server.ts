@@ -41,7 +41,6 @@ const server = serve({ fetch: app.fetch, port: env.API_PORT,  }, (info) => {
   log.info({ port: info.port }, 'API listening');
 });
 
-// Graceful shutdown: stop accepting connections, finish in-flight requests, close the DB.
 function shutdown(signal: string): void {
   log.info({ signal }, 'shutting down');
   const force = setTimeout(() => process.exit(1), 10_000);
